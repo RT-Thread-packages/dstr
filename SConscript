@@ -8,14 +8,14 @@ src = []
 inc = []
 
 # add dstr common include
-inc = inc + [cwd + '/dstr/inc']
+inc = inc + [cwd + '/inc']
 
 # add dstr basic code
-src = src + [cwd + '/dstr/src/dstr.c']
+src = src + [cwd + '/src/dstr.c']
 
 # add dstr test code
 if GetDepend('DSTR_USING_EXAMPLE'):
-    src = src + [cwd + '/dstr/examples/examples_dstr.c']
+    src = src + [cwd + '/examples/examples_dstr.c']
 
 
 # add group to IDE project
