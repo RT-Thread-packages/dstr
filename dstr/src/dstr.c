@@ -19,7 +19,7 @@
  *
  * Change Logs:
  * Date           Author       Notes
- * 2018-06-06     never        the first version
+ * 2018-06-07     never        the first version
  */
 
 #include <rtthread.h>
@@ -32,7 +32,7 @@
 #define DBG_ENABLE
 #undef  DBG_ENABLE
 #define DBG_SECTION_NAME  "[RTDSTR]"
-#define DBG_LEVEL         DBG_INFO
+#define DBG_LEVEL         DBG_ERROR
 #define DBG_COLOR
 #include <rtdbg.h>
 
@@ -60,16 +60,16 @@ rt_dstr_t *rt_dstr_new(const char *str)
         return NULL;
     }
 
-    thiz->length = strlen(str);
-    thiz->str = (char *)rt_malloc(sizeof(char) * (thiz->length + 1));
+    thiz->length = strlen(str) + 1; //  allocated space
+    thiz->str = (char *)malloc(sizeof(char) * thiz->length + 1);
 
     if (thiz->str == NULL)
     {
-        rt_free(thiz);
+        free(thiz);
         return NULL;
     }
 
-    memcpy(thiz->str, str, thiz->length + 1);
+    memcpy(thiz->str, str, thiz->length);
 
     return thiz;
 }
@@ -88,16 +88,16 @@ void rt_dstr_del(rt_dstr_t *thiz)
 
     if (thiz->str == NULL)
     {
-        rt_free(thiz);
+        free(thiz);
         return;
     }
 
-    rt_free(thiz->str);
+    free(thiz->str);
 
-    rt_free(thiz);
+    free(thiz);
 }
 
-static int rt_dstr_resize(rt_dstr_t *const thiz, size_t new_length)
+static int rt_dstr_resize(rt_dstr_t *const thiz, size_t new_spacesize)
 {
     char *p = NULL;
 
@@ -106,8 +106,8 @@ static int rt_dstr_resize(rt_dstr_t *const thiz, size_t new_length)
         dbg_log(DBG_ERROR, "resize.thiz param error\n");
         return NULL;
     }
-
-    p = (char *)rt_realloc(thiz->str, new_length);
+    
+    p = (char *)realloc(thiz->str, new_spacesize);
 
     if (p == NULL)
     {
@@ -116,6 +116,8 @@ static int rt_dstr_resize(rt_dstr_t *const thiz, size_t new_length)
     }
     else
     {   
+        thiz->length = new_spacesize;
+        rt_kprintf("new_spacesize:%d\n", thiz->length);        
         thiz->str = p;
         return 0;
     }
@@ -137,7 +139,7 @@ rt_dstr_t *rt_dstr_cat(rt_dstr_t *const thiz, const char *src)
 }
 
 /**
- * This function is similar, except that it will use at most n bytes from src;
+ * This function is similar, except that it will use at most n bytes from src,
  * and src does not need to be null-terminated if it contains n or more bytes.
  *
  * @param thiz the dstr(dynamic string) thiz
@@ -149,13 +151,13 @@ rt_dstr_t *rt_dstr_cat(rt_dstr_t *const thiz, const char *src)
 rt_dstr_t *rt_dstr_ncat(rt_dstr_t *const thiz, const char *src, size_t n)
 {
     int res = 0;
-    rt_uint32_t new_length = 0, src_length = 0, old_length = 0;
+    size_t new_spacesize = 0, old_spacesize = 0, src_length = 0;
     
-    src_length = strlen(src);
-    old_length = thiz->length;
-    new_length = src_length + old_length + 1;   //  e.g.: abc + efg\0 = abcefg\0
+    old_spacesize = thiz->length;       //  allocated space
+
+    new_spacesize = n + old_spacesize;  //  allocated space   
     
-    res = rt_dstr_resize(thiz, new_length); 
+    res = rt_dstr_resize(thiz, new_spacesize);
 
     if (res == -1)
     {
@@ -163,8 +165,8 @@ rt_dstr_t *rt_dstr_ncat(rt_dstr_t *const thiz, const char *src, size_t n)
         return NULL;
     }
 
-    memcpy(thiz->str + old_length, src, n); //  
-    *(thiz->str + old_length + n) = '\0';
+    memcpy(thiz->str + (old_spacesize - 1), src, n); 
+    *(thiz->str + (old_spacesize - 1) + n) = '\0';
     
     return thiz;
 }
@@ -291,7 +293,7 @@ int rt_dstr_strlen(rt_dstr_t *const thiz)
     if (thiz == NULL)
         return -1;
     
-    return rt_strlen(thiz->str);
+    return strlen(thiz->str);
 }
 
 /**
@@ -307,9 +309,9 @@ int rt_dstr_sprintf(rt_dstr_t *const thiz, const char *fmt, ...)
     va_list  arg_ptr;
     va_list  tmp;
     int status = 0;
-    size_t new_length = 0, old_length = 0, res = 0;
+    size_t new_length = 0, old_spacesize = 0, res = 0;
 
-    old_length = thiz->length;
+    old_spacesize = thiz->length;
     
     va_start(arg_ptr, fmt);
    
@@ -319,7 +321,7 @@ int rt_dstr_sprintf(rt_dstr_t *const thiz, const char *fmt, ...)
     
     va_end(tmp);
      
-    status = rt_dstr_resize(thiz, new_length + old_length);
+    status = rt_dstr_resize(thiz, new_length + old_spacesize);
 
     if (status == -1)
     {
@@ -328,6 +330,7 @@ int rt_dstr_sprintf(rt_dstr_t *const thiz, const char *fmt, ...)
     }
 
     res = vsnprintf(thiz->str, new_length + 1, fmt, arg_ptr);
+
     va_end(arg_ptr);
     
     return res;

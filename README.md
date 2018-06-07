@@ -1,7 +1,7 @@
 # dstr
 
 ## 1、介绍
-这是一个在 RT-Thread 上，基于ANSI/ISO C(C89)实现的动态字符串软件包
+这是一个在 RT-Thread 上，基于ANSI/ISO C(C89)实现的动态字符串软件包。
 
 ### 1.1 目录结构
 
@@ -17,7 +17,7 @@ dstr package 遵循 LGPLv2.1 许可，详见 `LICENSE` 文件。
 
 ### 1.3 依赖
 
-- RT-Thread 3.0+
+对 RT-Thread 无依赖，也可用于裸机。
 
 ## 2、如何打开 dstr
 

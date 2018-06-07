@@ -19,7 +19,7 @@
  *
  * Change Logs:
  * Date           Author       Notes
- * 2018-06-06     never        the first version
+ * 2018-06-07     never        the first version
  */
 
 #include <rtthread.h>
@@ -28,14 +28,14 @@
 
 void rt_dstr_printf(rt_dstr_t *thiz)
 {
-    if (thiz == RT_NULL)
+    if (thiz == NULL)
         return;
     rt_kprintf("%s\n", thiz->str);
 }
 
 void dstr_test_new(void)
 {
-    rt_dstr_t *p = RT_NULL;
+    rt_dstr_t *p = NULL;
     
     p = rt_dstr_new("new dstr");
     rt_dstr_printf(p);
@@ -44,7 +44,7 @@ void dstr_test_new(void)
 
 void dstr_test_cat(void)
 {   
-    rt_dstr_t *p = RT_NULL;
+    rt_dstr_t *p = NULL;
     
     p = rt_dstr_new("cat");
     
@@ -57,21 +57,24 @@ void dstr_test_cat(void)
 
 void dstr_test_ncat(void)
 {   
-    rt_dstr_t *p = RT_NULL;
+    rt_dstr_t *p1 = NULL;
     
-    p = rt_dstr_new("ncat");
+    p1 = rt_dstr_new("ncat");
     
-    rt_dstr_ncat(p, " dstrnnn", 5);
+    rt_dstr_ncat(p1, " dstrnnn", 5);
     
-    rt_dstr_printf(p);
+    rt_dstr_ncat(p1, "1234", 3);
     
-    rt_dstr_del(p);
+    rt_dstr_printf(p1);
+    rt_kprintf("p2 str:%s\n",p1->str);
+    
+    rt_dstr_del(p1);
 }
 
 void dstr_test_cmp(void)
 {
-    rt_dstr_t *p1 = RT_NULL;
-    rt_dstr_t *p2 = RT_NULL;
+    rt_dstr_t *p1 = NULL;
+    rt_dstr_t *p2 = NULL;
     int res = 0;
     
     p1 = rt_dstr_new("helle");
@@ -100,9 +103,9 @@ void dstr_test_cmp(void)
 
 void dstr_test_ncmp(void)
 {
-    rt_dstr_t *p1 = RT_NULL;
-    rt_dstr_t *p2 = RT_NULL;
-    rt_int8_t res = 0;
+    rt_dstr_t *p1 = NULL;
+    rt_dstr_t *p2 = NULL;
+    int res = 0;
     
     p1 = rt_dstr_new("hello");
     p2 = rt_dstr_new("hella");
@@ -130,9 +133,9 @@ void dstr_test_ncmp(void)
 
 void dstr_test_casecmp(void)
 {
-    rt_dstr_t *p1 = RT_NULL;
-    rt_dstr_t *p2 = RT_NULL;
-    rt_int8_t res = 0;
+    rt_dstr_t *p1 = NULL;
+    rt_dstr_t *p2 = NULL;
+    int res = 0;
     
     p1 = rt_dstr_new("hello");
     p2 = rt_dstr_new("HELLO");
@@ -160,7 +163,7 @@ void dstr_test_casecmp(void)
 
 void dstr_test_strlen(void)
 {
-    rt_dstr_t *p1 = RT_NULL;
+    rt_dstr_t *p1 = NULL;
     int res = 0;
     
     p1 = rt_dstr_new("hello strlen");
@@ -178,8 +181,8 @@ void dstr_test_strlen(void)
 void dstr_test_sprintf(void)
 {    
     const char *src = "hello dstr sprintf";
-    rt_dstr_t *p1 = RT_NULL;
-    rt_dstr_t *p2 = RT_NULL;
+    rt_dstr_t *p1 = NULL;
+    rt_dstr_t *p2 = NULL;
     
     //  string format
     p1 = rt_dstr_new("");

@@ -19,7 +19,7 @@
  *
  * Change Logs:
  * Date           Author       Notes
- * 2018-06-06     never        the first version
+ * 2018-06-07     never        the first version
  */
 
 #ifndef __DSTR_H__
@@ -30,7 +30,7 @@
 struct rt_dstr
 {
     char *str;
-    unsigned int length;
+    size_t length;  //  allocated space
 };
 typedef struct rt_dstr rt_dstr_t;
 
