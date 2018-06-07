@@ -33,7 +33,7 @@ RT-Thread online packages
 
 ## 3、使用 dstr
 
-使用dstr可参考例子工程，该工程位于：[/dstr/examples/examples_dstr.c](dstr/examples/examples_dstr.c)
+使用dstr可参考例子工程，该工程位于：[/examples/examples_dstr.c](examples/examples_dstr.c)
 
 ### 3.1 创建动态字符串对象
 `rt_dstr_t *rt_dstr_new(const char *str);`
