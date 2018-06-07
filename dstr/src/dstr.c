@@ -32,7 +32,7 @@
 #define DBG_ENABLE
 #undef  DBG_ENABLE
 #define DBG_SECTION_NAME  "[RTDSTR]"
-#define DBG_LEVEL         DBG_ERROR
+#define DBG_LEVEL         DBG_INFO
 #define DBG_COLOR
 #include <rtdbg.h>
 
@@ -61,7 +61,7 @@ rt_dstr_t *rt_dstr_new(const char *str)
     }
 
     thiz->length = strlen(str) + 1; //  allocated space
-    thiz->str = (char *)malloc(sizeof(char) * thiz->length + 1);
+    thiz->str = (char *)malloc(sizeof(char) * thiz->length);
 
     if (thiz->str == NULL)
     {
@@ -104,7 +104,7 @@ static int rt_dstr_resize(rt_dstr_t *const thiz, size_t new_spacesize)
     if (thiz == NULL)
     {
         dbg_log(DBG_ERROR, "resize.thiz param error\n");
-        return NULL;
+        return -1;
     }
     
     p = (char *)realloc(thiz->str, new_spacesize);
@@ -117,7 +117,7 @@ static int rt_dstr_resize(rt_dstr_t *const thiz, size_t new_spacesize)
     else
     {   
         thiz->length = new_spacesize;
-        rt_kprintf("new_spacesize:%d\n", thiz->length);        
+        dbg_log(DBG_INFO, "new_spacesize:%d\n", thiz->length);       
         thiz->str = p;
         return 0;
     }
@@ -151,7 +151,7 @@ rt_dstr_t *rt_dstr_cat(rt_dstr_t *const thiz, const char *src)
 rt_dstr_t *rt_dstr_ncat(rt_dstr_t *const thiz, const char *src, size_t n)
 {
     int res = 0;
-    size_t new_spacesize = 0, old_spacesize = 0, src_length = 0;
+    size_t new_spacesize = 0, old_spacesize = 0;
     
     old_spacesize = thiz->length;       //  allocated space
 
@@ -308,27 +308,24 @@ int rt_dstr_sprintf(rt_dstr_t *const thiz, const char *fmt, ...)
 {
     va_list  arg_ptr;
     va_list  tmp;
-    int status = 0;
-    size_t new_length = 0, old_spacesize = 0, res = 0;
-
-    old_spacesize = thiz->length;
+    int status = 0, res = 0, new_length = 0;
     
     va_start(arg_ptr, fmt);
    
     va_copy(tmp, arg_ptr);
     
-    new_length = vsnprintf(NULL, 0, fmt, tmp);
+    new_length = vsnprintf(NULL, 0, fmt, tmp);      // strlen("test sprintf") = 12
     
     va_end(tmp);
      
-    status = rt_dstr_resize(thiz, new_length + old_spacesize);
+    status = rt_dstr_resize(thiz, new_length + 1);  //  allocated space
 
     if (status == -1)
     {
         va_end(arg_ptr);
         return -1;
-    }
-
+    }  
+    
     res = vsnprintf(thiz->str, new_length + 1, fmt, arg_ptr);
 
     va_end(arg_ptr);

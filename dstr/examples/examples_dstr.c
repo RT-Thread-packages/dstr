@@ -180,7 +180,7 @@ void dstr_test_strlen(void)
 
 void dstr_test_sprintf(void)
 {    
-    const char *src = "hello dstr sprintf";
+    const char *src = "test sprintf";
     rt_dstr_t *p1 = NULL;
     rt_dstr_t *p2 = NULL;
     
@@ -196,7 +196,7 @@ void dstr_test_sprintf(void)
     //  hex format    
     p2 = rt_dstr_new("");
     
-    rt_dstr_sprintf(p2, "%08x", 20180604);
+    rt_dstr_sprintf(p2, "%08x", 0x20180604);
     
     rt_dstr_printf(p2);
     
