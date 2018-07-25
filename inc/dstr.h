@@ -20,6 +20,7 @@
  * Change Logs:
  * Date           Author       Notes
  * 2018-06-07     never        the first version
+ * 2018-07-25     never        add append_printf() and modify some APIs
  */
 
 #ifndef __DSTR_H__
@@ -30,15 +31,15 @@
 struct rt_dstr
 {
     char *str;
-    size_t length;  //  allocated space
+    size_t length;  /* allocated space. e.g.: "abc" + '\0' */
 };
 typedef struct rt_dstr rt_dstr_t;
 
 rt_dstr_t *rt_dstr_new(const char *str);
 void rt_dstr_del(rt_dstr_t *thiz);
 
-rt_dstr_t *rt_dstr_cat(rt_dstr_t *const thiz, const char *src);
-rt_dstr_t *rt_dstr_ncat(rt_dstr_t *const thiz, const char *src, size_t n);
+rt_dstr_t *rt_dstr_cat(rt_dstr_t *thiz, const char *src);
+rt_dstr_t *rt_dstr_ncat(rt_dstr_t *thiz, const char *src, size_t n);
 
 int rt_dstr_cmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2);
 int rt_dstr_ncmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2, size_t n);
@@ -46,6 +47,6 @@ int rt_dstr_ncmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2, size_t n);
 int rt_dstr_casecmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2);
 int rt_dstr_strlen(rt_dstr_t *const thiz);
 
-int rt_dstr_sprintf(rt_dstr_t *const thiz, const char *fmt, ...);
-
+rt_dstr_t *rt_dstr_sprintf(rt_dstr_t *thiz, const char *fmt, ...);
+rt_dstr_t *rt_dstr_append_printf(rt_dstr_t *thiz, const char *format, ...);
 #endif /* __DSTR_H__ */
