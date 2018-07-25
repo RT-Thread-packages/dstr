@@ -20,6 +20,7 @@
  * Change Logs:
  * Date           Author       Notes
  * 2018-06-07     never        the first version
+ * 2018-07-25     never        add append_printf() and modify some APIs
  */
 
 #include <rtthread.h>
@@ -46,13 +47,13 @@
 rt_dstr_t *rt_dstr_new(const char *str)
 {
     rt_dstr_t *thiz = NULL;
-    
+
     if (str == NULL)
     {
         dbg_log(DBG_ERROR, "new.string param error\n");
         return NULL;
     }
-    
+
     thiz = (rt_dstr_t *)malloc(sizeof(struct rt_dstr));
     if (thiz == NULL)
     {
@@ -60,7 +61,7 @@ rt_dstr_t *rt_dstr_new(const char *str)
         return NULL;
     }
 
-    thiz->length = strlen(str) + 1; //  allocated space
+    thiz->length = strlen(str) + 1; /* allocated space */
     thiz->str = (char *)malloc(sizeof(char) * thiz->length);
 
     if (thiz->str == NULL)
@@ -106,7 +107,7 @@ static int rt_dstr_resize(rt_dstr_t *const thiz, size_t new_spacesize)
         dbg_log(DBG_ERROR, "resize.thiz param error\n");
         return -1;
     }
-    
+
     p = (char *)realloc(thiz->str, new_spacesize);
 
     if (p == NULL)
@@ -115,16 +116,16 @@ static int rt_dstr_resize(rt_dstr_t *const thiz, size_t new_spacesize)
         return -1;
     }
     else
-    {   
+    {
         thiz->length = new_spacesize;
-        dbg_log(DBG_INFO, "new_spacesize:%d\n", thiz->length);       
+        dbg_log(DBG_INFO, "new_spacesize:%d\n", thiz->length);
         thiz->str = p;
         return 0;
     }
 }
 
 /**
- * This function appends the src string to the dest object, 
+ * This function appends the src string to the dest object,
  * overwriting the terminating null byte '\0' at the end of the dest,
  * and then adds a terminating null byte.
  *
@@ -133,7 +134,7 @@ static int rt_dstr_resize(rt_dstr_t *const thiz, size_t new_spacesize)
  *
  * @return the dest dstr
  */
-rt_dstr_t *rt_dstr_cat(rt_dstr_t *const thiz, const char *src)
+rt_dstr_t *rt_dstr_cat(rt_dstr_t *thiz, const char *src)
 {
     return rt_dstr_ncat(thiz, src, strlen(src));
 }
@@ -148,15 +149,20 @@ rt_dstr_t *rt_dstr_cat(rt_dstr_t *const thiz, const char *src)
  *
  * @return the dest dstr
  */
-rt_dstr_t *rt_dstr_ncat(rt_dstr_t *const thiz, const char *src, size_t n)
+rt_dstr_t *rt_dstr_ncat(rt_dstr_t *thiz, const char *src, size_t n)
 {
     int res = 0;
     size_t new_spacesize = 0, old_spacesize = 0;
-    
-    old_spacesize = thiz->length;       //  allocated space
 
-    new_spacesize = n + old_spacesize;  //  allocated space   
-    
+    if (thiz == NULL)
+    {
+        thiz = rt_dstr_new("");
+    }
+
+    old_spacesize = thiz->length;       /* allocated space */
+
+    new_spacesize = n + old_spacesize;  /* allocated space */
+
     res = rt_dstr_resize(thiz, new_spacesize);
 
     if (res == -1)
@@ -165,9 +171,9 @@ rt_dstr_t *rt_dstr_ncat(rt_dstr_t *const thiz, const char *src, size_t n)
         return NULL;
     }
 
-    memcpy(thiz->str + (old_spacesize - 1), src, n); 
+    memcpy(thiz->str + (old_spacesize - 1), src, n);
     *(thiz->str + (old_spacesize - 1) + n) = '\0';
-    
+
     return thiz;
 }
 
@@ -180,20 +186,20 @@ rt_dstr_t *rt_dstr_ncat(rt_dstr_t *const thiz, const char *src, size_t n)
  * @return the result
  */
 int rt_dstr_cmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2)
-{   
+{
     char *str1, *str2;
-    
+
     if ((dstr1 == NULL) && (dstr2 == NULL))
     {
         str1 = NULL;
         str2 = NULL;
     }
-    else if(dstr1 == NULL)
+    else if (dstr1 == NULL)
     {
         str1 = NULL;
         str2 = dstr2->str;
     }
-    else if(dstr2 == NULL)
+    else if (dstr2 == NULL)
     {
         str2 = NULL;
         str1 = dstr1->str;
@@ -203,10 +209,10 @@ int rt_dstr_cmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2)
         str1 = dstr1->str;
         str2 = dstr2->str;
     }
-    
+
     return strcmp(str1, str2);
 }
-    
+
 /**
  * This function compares dstr1 and dstr2.
  *
@@ -219,18 +225,18 @@ int rt_dstr_cmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2)
 int rt_dstr_ncmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2, size_t n)
 {
     char *str1, *str2;
-    
+
     if ((dstr1 == NULL) && (dstr2 == NULL))
     {
         str1 = NULL;
         str2 = NULL;
     }
-    else if(dstr1 == NULL)
+    else if (dstr1 == NULL)
     {
         str1 = NULL;
         str2 = dstr2->str;
     }
-    else if(dstr2 == NULL)
+    else if (dstr2 == NULL)
     {
         str2 = NULL;
         str1 = dstr1->str;
@@ -240,7 +246,7 @@ int rt_dstr_ncmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2, size_t n)
         str1 = dstr1->str;
         str2 = dstr2->str;
     }
-    
+
     return strncmp(str1, str2, n);
 }
 
@@ -255,18 +261,18 @@ int rt_dstr_ncmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2, size_t n)
 int rt_dstr_casecmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2)
 {
     char *str1, *str2;
-    
+
     if ((dstr1 == NULL) && (dstr2 == NULL))
     {
         str1 = NULL;
         str2 = NULL;
     }
-    else if(dstr1 == NULL)
+    else if (dstr1 == NULL)
     {
         str1 = NULL;
         str2 = dstr2->str;
     }
-    else if(dstr2 == NULL)
+    else if (dstr2 == NULL)
     {
         str2 = NULL;
         str1 = dstr1->str;
@@ -276,8 +282,8 @@ int rt_dstr_casecmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2)
         str1 = dstr1->str;
         str2 = dstr2->str;
     }
-    
-    return strcasecmp (str1, str2);
+
+    return strcasecmp(str1, str2);
 }
 
 /**
@@ -292,43 +298,89 @@ int rt_dstr_strlen(rt_dstr_t *const thiz)
 {
     if (thiz == NULL)
         return -1;
-    
+
     return strlen(thiz->str);
 }
 
 /**
- * This function will return the length of a dstr, which terminate will
+ * This function will return the dest dstr, which terminate will
  * null character.
  *
  * @param thiz the dstr
  *
- * @return the length of dstr
+ * @return the dest dstr
  */
-int rt_dstr_sprintf(rt_dstr_t *const thiz, const char *fmt, ...)
+rt_dstr_t *rt_dstr_sprintf(rt_dstr_t *thiz, const char *fmt, ...)
 {
     va_list  arg_ptr;
     va_list  tmp;
-    int status = 0, res = 0, new_length = 0;
-    
-    va_start(arg_ptr, fmt);
-   
-    va_copy(tmp, arg_ptr);
-    
-    new_length = vsnprintf(NULL, 0, fmt, tmp);      // strlen("test sprintf") = 12
-    
-    va_end(tmp);
-     
-    status = rt_dstr_resize(thiz, new_length + 1);  //  allocated space
+    int new_length = 0;
 
-    if (status == -1)
+    if (thiz == NULL)
+    {
+        thiz = rt_dstr_new("");
+    }
+
+    va_start(arg_ptr, fmt);
+
+    va_copy(tmp, arg_ptr);
+
+    new_length = vsnprintf(NULL, 0, fmt, tmp);      /* strlen("test sprintf") = 12 */
+
+    va_end(tmp);
+
+    if (rt_dstr_resize(thiz, new_length + 1) == -1) /* allocated space */
     {
         va_end(arg_ptr);
-        return -1;
-    }  
-    
-    res = vsnprintf(thiz->str, new_length + 1, fmt, arg_ptr);
+        return NULL;
+    }
+
+    vsnprintf(thiz->str, new_length + 1, fmt, arg_ptr);
 
     va_end(arg_ptr);
-    
-    return res;
+
+    return thiz;
+}
+
+/**
+ * This function will return the dest dstr, which terminate will
+ * null character.
+ *
+ * @param thiz the dstr
+ *
+ * @return the dest dstr
+ */
+rt_dstr_t *rt_dstr_append_printf(rt_dstr_t *thiz, const char *format, ...)
+{
+    va_list ap;
+    va_list tmpa;
+    char *dst = NULL;
+    int old_length = 0, new_length = 0;
+
+    if (thiz == NULL)
+    {
+        thiz = rt_dstr_new("");
+    }
+
+    va_start(ap, format);
+
+    old_length = thiz->length;
+
+    va_copy(tmpa, ap);
+    new_length = vsnprintf(NULL, 0, format, tmpa);
+    va_end(tmpa);
+
+    if (rt_dstr_resize(thiz, old_length + new_length) == -1)
+    {
+        va_end(ap);
+        return NULL;
+    }
+
+    dst = thiz->str + old_length - 1; /* remove '\0' */
+
+    vsnprintf(dst, 1 + new_length, format, ap);
+
+    va_end(ap);
+
+    return thiz;
 }
