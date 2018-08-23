@@ -26,6 +26,9 @@
 #include <rtthread.h>
 #include <stdarg.h>
 #include <string.h>
+#ifdef __GNUC__
+#include <strings.h>
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include "dstr.h"
