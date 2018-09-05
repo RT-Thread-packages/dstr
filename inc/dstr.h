@@ -21,12 +21,11 @@
  * Date           Author       Notes
  * 2018-06-07     never        the first version
  * 2018-07-25     never        add append_printf() and modify some APIs
+ * 2018-08-30     never        add some APIs and modify some APIs
  */
 
 #ifndef __DSTR_H__
 #define __DSTR_H__
-
-#include <rtthread.h>
 
 struct rt_dstr
 {
@@ -40,6 +39,15 @@ void rt_dstr_del(rt_dstr_t *thiz);
 
 rt_dstr_t *rt_dstr_cat(rt_dstr_t *thiz, const char *src);
 rt_dstr_t *rt_dstr_ncat(rt_dstr_t *thiz, const char *src, size_t n);
+
+rt_dstr_t *rt_dstr_precat(rt_dstr_t *thiz, const char *src);
+rt_dstr_t *rt_dstr_prencat(rt_dstr_t *thiz, const char *src, size_t n);
+
+rt_dstr_t *rt_dstr_cat_dstr(rt_dstr_t *dst, rt_dstr_t *src);
+rt_dstr_t *rt_dstr_ncat_dstr(rt_dstr_t *dst, rt_dstr_t *src, size_t n);
+
+rt_dstr_t *rt_dstr_precat_dstr(rt_dstr_t *dst, rt_dstr_t *src);
+rt_dstr_t *rt_dstr_prencat_dstr(rt_dstr_t *dst, rt_dstr_t *src, size_t n);
 
 int rt_dstr_cmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2);
 int rt_dstr_ncmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2, size_t n);

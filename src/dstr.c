@@ -21,9 +21,9 @@
  * Date           Author       Notes
  * 2018-06-07     never        the first version
  * 2018-07-25     never        add append_printf() and modify some APIs
+ * 2018-08-30     never        add some APIs and modify some APIs
  */
 
-#include <rtthread.h>
 #include <stdarg.h>
 #include <string.h>
 #ifdef __GNUC__
@@ -35,10 +35,12 @@
 
 #define DBG_ENABLE
 #undef  DBG_ENABLE
-#define DBG_SECTION_NAME  "[RTDSTR]"
+#define DBG_SECTION_NAME  "RTDSTR"
 #define DBG_LEVEL         DBG_INFO
 #define DBG_COLOR
 #include <rtdbg.h>
+
+typedef rt_dstr_t *(*save_t)(rt_dstr_t *thiz, const char *src, size_t n, size_t old_size);
 
 /**
  * This function will create a dstr(dynamic string) object.
@@ -51,31 +53,35 @@ rt_dstr_t *rt_dstr_new(const char *str)
 {
     rt_dstr_t *thiz = NULL;
 
-    if (str == NULL)
-    {
-        dbg_log(DBG_ERROR, "new.string param error\n");
-        return NULL;
-    }
-
-    thiz = (rt_dstr_t *)malloc(sizeof(struct rt_dstr));
+    thiz = (rt_dstr_t *)malloc(sizeof(*thiz));
     if (thiz == NULL)
     {
-        dbg_log(DBG_ERROR, "new malloc error\n");
-        return NULL;
+        dbg_log(DBG_ERROR, "new.malloc error\n");
+        goto err;
     }
 
-    thiz->length = strlen(str) + 1; /* allocated space */
-    thiz->str = (char *)malloc(sizeof(char) * thiz->length);
+    if (str == NULL)
+        thiz->length = 1;
+    else
+        thiz->length = strlen(str) + 1;
 
+    thiz->str = (char *)malloc(sizeof(thiz->length));
     if (thiz->str == NULL)
     {
-        free(thiz);
-        return NULL;
+        dbg_log(DBG_ERROR, "new.malloc error\n");
+        goto err;
     }
 
-    memcpy(thiz->str, str, thiz->length);
+    if (str == NULL)
+        memcpy(thiz->str, "", thiz->length);
+    else
+        memcpy(thiz->str, str, thiz->length);
 
     return thiz;
+
+err:
+    rt_dstr_del(thiz);
+    return NULL;
 }
 
 /**
@@ -90,41 +96,90 @@ void rt_dstr_del(rt_dstr_t *thiz)
     if (thiz == NULL)
         return;
 
-    if (thiz->str == NULL)
+    if (thiz->str != NULL)
     {
-        free(thiz);
-        return;
+        free(thiz->str);
+        thiz->str = NULL;
     }
-
-    free(thiz->str);
 
     free(thiz);
 }
 
-static int rt_dstr_resize(rt_dstr_t *const thiz, size_t new_spacesize)
+static int _resize(rt_dstr_t *const thiz, size_t new_size)
 {
     char *p = NULL;
 
     if (thiz == NULL)
     {
-        dbg_log(DBG_ERROR, "resize.thiz param error\n");
-        return -1;
+        dbg_log(DBG_ERROR, "_resize.thiz param error\n");
+        goto err;
     }
 
-    p = (char *)realloc(thiz->str, new_spacesize);
+    p = (char *)realloc(thiz->str, new_size);
 
     if (p == NULL)
     {
-        dbg_log(DBG_ERROR, "resize.realloc error\n");
-        return -1;
+        dbg_log(DBG_ERROR, "_resize.realloc error\n");
+        goto err;
     }
     else
     {
-        thiz->length = new_spacesize;
-        dbg_log(DBG_INFO, "new_spacesize:%d\n", thiz->length);
+        thiz->length = new_size;
+        dbg_log(DBG_INFO, "new_size:%d\n", thiz->length);
         thiz->str = p;
         return 0;
     }
+err:
+    return -1;
+}
+
+static rt_dstr_t *_ahead(rt_dstr_t *thiz, const char *src, size_t n, size_t old_size)
+{
+    memmove(thiz->str + n, thiz->str, n);
+    memcpy(thiz->str, src, n);
+    *(thiz->str + (old_size - 1) + n) = '\0';
+    return thiz;
+}
+
+static rt_dstr_t *_behind(rt_dstr_t *thiz, const char *src, size_t n, size_t old_size)
+{
+    memcpy(thiz->str + (old_size - 1), src, n);
+    *(thiz->str + (old_size - 1) + n) = '\0';
+    return thiz;
+}
+
+static rt_dstr_t *_xcat(rt_dstr_t *thiz, const char *src, size_t n, save_t fun)
+{
+    int res = 0;
+    size_t new_size = 0, old_size = 0;
+
+    if (thiz == NULL)
+        thiz = rt_dstr_new(NULL);
+
+    if (src == NULL)
+    {
+        dbg_log(DBG_ERROR, "param error\n");
+        goto err;
+    }
+
+    if (n > (strlen(src) + 1))
+    {
+        dbg_log(DBG_ERROR, "size error\n");
+        goto err;
+    }
+
+    old_size = thiz->length;
+    new_size = n + old_size;
+
+    res = _resize(thiz, new_size);
+    if (res == -1)
+    {
+        dbg_log(DBG_ERROR, "_resize error\n");
+        goto err;
+    }
+    return fun(thiz, src, n, old_size);
+err:
+    return NULL;
 }
 
 /**
@@ -132,7 +187,7 @@ static int rt_dstr_resize(rt_dstr_t *const thiz, size_t new_spacesize)
  * overwriting the terminating null byte '\0' at the end of the dest,
  * and then adds a terminating null byte.
  *
- * @param thiz the dstr(dynamic string) thiz
+ * @param thiz the dstr(dynamic string)
  * @param src  the string
  *
  * @return the dest dstr
@@ -146,38 +201,118 @@ rt_dstr_t *rt_dstr_cat(rt_dstr_t *thiz, const char *src)
  * This function is similar, except that it will use at most n bytes from src,
  * and src does not need to be null-terminated if it contains n or more bytes.
  *
- * @param thiz the dstr(dynamic string) thiz
+ * @param thiz the dstr(dynamic string)
  * @param src  the string
- * @param count the maximum compare length
+ * @param n it will use at most n bytes from src
  *
  * @return the dest dstr
  */
 rt_dstr_t *rt_dstr_ncat(rt_dstr_t *thiz, const char *src, size_t n)
 {
-    int res = 0;
-    size_t new_spacesize = 0, old_spacesize = 0;
+    return _xcat(thiz, src, n, _behind);
+}
 
-    if (thiz == NULL)
-    {
-        thiz = rt_dstr_new("");
-    }
+/**
+ * This function prepends the src string to the dest object,
+ * overwriting the terminating null byte '\0' at the end of the dest,
+ * and then adds a terminating null byte.
+ *
+ * @param thiz the dstr(dynamic string)
+ * @param src  the string
+ *
+ * @return the dest dstr
+ */
+rt_dstr_t *rt_dstr_precat(rt_dstr_t *thiz, const char *src)
+{
+    return _xcat(thiz, src, strlen(src), _ahead);
+}
 
-    old_spacesize = thiz->length;       /* allocated space */
+/**
+ * This function is similar, except that it will use at most n bytes from src,
+ * and src does not need to be null-terminated if it contains n or more bytes.
+ *
+ * @param thiz the dstr(dynamic string)
+ * @param src  the string
+ * @param n it will use at most n bytes from src
+ *
+ * @return the dest dstr
+ */
+rt_dstr_t *rt_dstr_prencat(rt_dstr_t *thiz, const char *src, size_t n)
+{
+    return _xcat(thiz, src, n, _ahead);
+}
 
-    new_spacesize = n + old_spacesize;  /* allocated space */
+/**
+ * This function appends the dstr to the dest object,
+ * overwriting the terminating null byte '\0' at the end of the dest,
+ * and then adds a terminating null byte.
+ *
+ * @param dst the dest dstr thiz
+ * @param src the src dstr
+ *
+ * @return the dest dstr
+ */
+rt_dstr_t *rt_dstr_cat_dstr(rt_dstr_t *dst, rt_dstr_t *src)
+{
+    /* e.g.: src->str = "abc", src->length = 4 */
+    return rt_dstr_ncat_dstr(dst, src, src->length - 1);
+}
 
-    res = rt_dstr_resize(thiz, new_spacesize);
+/**
+ * This function is similar, except that it will use at most n bytes from src,
+ * and src does not need to be null-terminated if it contains n or more bytes.
+ *
+ * @param n it will use at most n bytes from src
+ *
+ * @return the dest dstr
+ */
+rt_dstr_t *rt_dstr_ncat_dstr(rt_dstr_t *dst, rt_dstr_t *src, size_t n)
+{
+    return _xcat(dst, src->str, n, _behind);
+}
 
-    if (res == -1)
-    {
-        dbg_log(DBG_ERROR, "nacat.resize error\n");
-        return NULL;
-    }
+/**
+ * This function prepends the dstr to the dest object,
+ * overwriting the terminating null byte '\0' at the end of the dest,
+ * and then adds a terminating null byte.
+ *
+ * @param thiz the dstr(dynamic string) thiz
+ * @param src  the string
+ *
+ * @return the dest dstr
+ */
+rt_dstr_t *rt_dstr_precat_dstr(rt_dstr_t *dst, rt_dstr_t *src)
+{
+    /* e.g.: src->str = "abc", src->length = 4 */
+    return rt_dstr_prencat_dstr(dst, src, src->length - 1);
+}
 
-    memcpy(thiz->str + (old_spacesize - 1), src, n);
-    *(thiz->str + (old_spacesize - 1) + n) = '\0';
+/**
+ * This function is similar, except that it will use at most n bytes from src,
+ * and src does not need to be null-terminated if it contains n or more bytes.
+ *
+ * @param thiz the dstr(dynamic string)
+ * @param src  the string
+ * @param n it will use at most n bytes from src
+ *
+ * @return the dest dstr
+ */
+rt_dstr_t *rt_dstr_prencat_dstr(rt_dstr_t *dst, rt_dstr_t *src, size_t n)
+{
+    return _xcat(dst, src->str, n, _ahead);
+}
 
-    return thiz;
+static void _param_process(rt_dstr_t *const d1, rt_dstr_t *const d2, char **s1, char **s2)
+{
+    if (d1 != NULL)
+        *s1 = d1->str;
+    else
+        *s1 = NULL;
+
+    if (d2 != NULL)
+        *s2 = d2->str;
+    else
+        *s2 = NULL;
 }
 
 /**
@@ -190,30 +325,10 @@ rt_dstr_t *rt_dstr_ncat(rt_dstr_t *thiz, const char *src, size_t n)
  */
 int rt_dstr_cmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2)
 {
-    char *str1, *str2;
+    char *s1 = NULL, *s2 = NULL;
 
-    if ((dstr1 == NULL) && (dstr2 == NULL))
-    {
-        str1 = NULL;
-        str2 = NULL;
-    }
-    else if (dstr1 == NULL)
-    {
-        str1 = NULL;
-        str2 = dstr2->str;
-    }
-    else if (dstr2 == NULL)
-    {
-        str2 = NULL;
-        str1 = dstr1->str;
-    }
-    else
-    {
-        str1 = dstr1->str;
-        str2 = dstr2->str;
-    }
-
-    return strcmp(str1, str2);
+    _param_process(dstr1, dstr2, &s1, &s2);
+    return strcmp(s1, s2);
 }
 
 /**
@@ -227,30 +342,10 @@ int rt_dstr_cmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2)
  */
 int rt_dstr_ncmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2, size_t n)
 {
-    char *str1, *str2;
+    char *s1 = NULL, *s2 = NULL;
 
-    if ((dstr1 == NULL) && (dstr2 == NULL))
-    {
-        str1 = NULL;
-        str2 = NULL;
-    }
-    else if (dstr1 == NULL)
-    {
-        str1 = NULL;
-        str2 = dstr2->str;
-    }
-    else if (dstr2 == NULL)
-    {
-        str2 = NULL;
-        str1 = dstr1->str;
-    }
-    else
-    {
-        str1 = dstr1->str;
-        str2 = dstr2->str;
-    }
-
-    return strncmp(str1, str2, n);
+    _param_process(dstr1, dstr2, &s1, &s2);
+    return strncmp(s1, s2, n);
 }
 
 /**
@@ -263,30 +358,10 @@ int rt_dstr_ncmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2, size_t n)
  */
 int rt_dstr_casecmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2)
 {
-    char *str1, *str2;
+    char *s1 = NULL, *s2 = NULL;
 
-    if ((dstr1 == NULL) && (dstr2 == NULL))
-    {
-        str1 = NULL;
-        str2 = NULL;
-    }
-    else if (dstr1 == NULL)
-    {
-        str1 = NULL;
-        str2 = dstr2->str;
-    }
-    else if (dstr2 == NULL)
-    {
-        str2 = NULL;
-        str1 = dstr1->str;
-    }
-    else
-    {
-        str1 = dstr1->str;
-        str2 = dstr2->str;
-    }
-
-    return strcasecmp(str1, str2);
+    _param_process(dstr1, dstr2, &s1, &s2);
+    return strcasecmp(s1, s2);
 }
 
 /**
@@ -315,34 +390,29 @@ int rt_dstr_strlen(rt_dstr_t *const thiz)
  */
 rt_dstr_t *rt_dstr_sprintf(rt_dstr_t *thiz, const char *fmt, ...)
 {
-    va_list  arg_ptr;
-    va_list  tmp;
-    int new_length = 0;
+    va_list  ap;
+    int new_len = 0;
 
     if (thiz == NULL)
+        thiz = rt_dstr_new(NULL);
+
+    va_start(ap, fmt);
+
+    new_len = vsnprintf(NULL, 0, fmt, ap);      /* strlen("test sprintf") = 12 */
+
+    if (_resize(thiz, new_len + 1) == -1) /* allocated space */
     {
-        thiz = rt_dstr_new("");
+        va_end(ap);
+        goto err;
     }
 
-    va_start(arg_ptr, fmt);
+    vsnprintf(thiz->str, new_len + 1, fmt, ap);
 
-    va_copy(tmp, arg_ptr);
-
-    new_length = vsnprintf(NULL, 0, fmt, tmp);      /* strlen("test sprintf") = 12 */
-
-    va_end(tmp);
-
-    if (rt_dstr_resize(thiz, new_length + 1) == -1) /* allocated space */
-    {
-        va_end(arg_ptr);
-        return NULL;
-    }
-
-    vsnprintf(thiz->str, new_length + 1, fmt, arg_ptr);
-
-    va_end(arg_ptr);
+    va_end(ap);
 
     return thiz;
+err:
+    return NULL;
 }
 
 /**
@@ -356,34 +426,31 @@ rt_dstr_t *rt_dstr_sprintf(rt_dstr_t *thiz, const char *fmt, ...)
 rt_dstr_t *rt_dstr_append_printf(rt_dstr_t *thiz, const char *format, ...)
 {
     va_list ap;
-    va_list tmpa;
     char *dst = NULL;
-    int old_length = 0, new_length = 0;
+    int old_len = 0, new_len = 0;
 
     if (thiz == NULL)
-    {
-        thiz = rt_dstr_new("");
-    }
+        thiz = rt_dstr_new(NULL);
 
     va_start(ap, format);
 
-    old_length = thiz->length;
+    old_len = thiz->length;
 
-    va_copy(tmpa, ap);
-    new_length = vsnprintf(NULL, 0, format, tmpa);
-    va_end(tmpa);
+    new_len = vsnprintf(NULL, 0, format, ap);
 
-    if (rt_dstr_resize(thiz, old_length + new_length) == -1)
+    if (_resize(thiz, old_len + new_len) == -1)
     {
         va_end(ap);
-        return NULL;
+        goto err;
     }
 
-    dst = thiz->str + old_length - 1; /* remove '\0' */
+    dst = thiz->str + old_len - 1; /* remove '\0' */
 
-    vsnprintf(dst, 1 + new_length, format, ap);
+    vsnprintf(dst, 1 + new_len, format, ap);
 
     va_end(ap);
 
     return thiz;
+err:
+    return NULL;
 }

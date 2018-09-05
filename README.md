@@ -19,7 +19,15 @@ dstr package 遵循 LGPLv2.1 许可，详见 `LICENSE` 文件。
 
 - 对 RT-Thread 无依赖，也可用于裸机。
 
-
+### 1.4 版本日志
+- v0.2.0
+  - 增在从前面拼接字符串相关API
+  - 增加从前面拼接动态字符串相关API
+  - 增加从后面拼接动态字符串相关API
+  - 改善用户体验
+  - 修复已知 bug
+- v0.1.0
+  - 动态字符串软件包第一版
 
 ## 2、如何打开 dstr
 
@@ -29,10 +37,9 @@ dstr package 遵循 LGPLv2.1 许可，详见 `LICENSE` 文件。
 RT-Thread online packages --->
     miscellaneous packages --->
         [*] dstr: a dynamic string package
-        	Version (latest) --->
+        	Version (v0.2.0) --->
         	dstr Options --->
         		[*] dstr test example
-        
 ```
 
 保存 menuconfig 配置后使用 `pkgs --update` 命令下载软件包
@@ -47,8 +54,10 @@ RT-Thread online packages --->
 | 参数 | 描述 |
 | ---- | ---- |
 | name  | 源字符串 |
-| return  | 创建成功，将返回 dstr 对象指针；创建失败则返回 NULL |
-
+| 返回 | 描述 |
+| thiz | 动态字符串创建成功 |
+| NULL | 动态字符串创建失败 |
+> 可以传入 NULL，使用详情可以查看 `examples_dstr.c`
 
 ### 3.2 删除动态字符串对象
 `void rt_dstr_del(rt_dstr_t *thiz);`
@@ -56,43 +65,122 @@ RT-Thread online packages --->
 | 参数 | 描述 |
 | ---- | ---- |
 | thiz  | 动态字符串对象 |
-| return  | 无 |
+| 返回 | 描述 |
+| 无 | 无 |
 
 
-### 3.3 动态字符串连接
+### 3.3 字符串后拼接
 `rt_dstr_t *rt_dstr_cat(rt_dstr_t *thiz, const char *src);`
 
 | 参数 | 描述 |
 | ---- | ---- |
 | thiz  | 动态字符串对象 |
 | src  | 源字符串 |
-| return  | cat 成功，将返回 dstr 对象指针；cat 失败，则返回 NULL，但不会更改 thiz，交由用户处理 |
+| 返回 | 描述 |
+| thiz | 字符串拼接 dstr 成功 |
+| NULL | 字符串拼接 dstr 失败，但不会更改 thiz，交由用户处理 |
 
 
-### 3.4 动态字符串连接（连接几个字符）
+### 3.4 字符串后拼接（拼接 n 个字符）
 `rt_dstr_t *rt_dstr_ncat(rt_dstr_t *thiz, const char *src, size_t n);`
 
 | 参数 | 描述 |
 | ---- | ---- |
 | thiz  | 动态字符串对象 |
 | src  | 源字符串 |
-| n  | 需要连接几个字符 |
-| return  | cat 成功，将返回 dstr 对象指针；cat 失败，则返回 NULL，但不会更改 thiz，交由用户处理 |
+| n  | 需要拼接几个字符 |
+| 返回 | 描述 |
+| thiz | 字符串拼接 dstr 成功 |
+| null | 字符串拼接 dstr 失败，但不会更改 thiz，交由用户处理 |
 
-### 3.5 动态字符串比较
+### 3.5 字符串前拼接
+`rt_dstr_t *rt_dstr_precat(rt_dstr_t *thiz, const char *src);`
+
+| 参数 | 描述 |
+| ---- | ---- |
+| thiz  | 动态字符串对象 |
+| src  | 源字符串 |
+| 返回 | 描述 |
+| thiz | 字符串拼接 dstr 成功 |
+| null | 字符串拼接 dstr 失败，但不会更改 thiz，交由用户处理 |
+
+
+### 3.6 字符串前拼接（拼接 n 个字符）
+`rt_dstr_t *rt_dstr_prencat(rt_dstr_t *thiz, const char *src, size_t n);`
+
+| 参数 | 描述 |
+| ---- | ---- |
+| thiz  | 动态字符串对象 |
+| src  | 源字符串 |
+| n  | 需要拼接几个字符 |
+| 返回 | 描述 |
+| thiz | 字符串拼接 dstr 成功 |
+| NULL | 字符串拼接 dstr 失败，但不会更改 thiz，交由用户处理 |
+
+
+### 3.7 动态字符串后拼接
+`rt_dstr_t *rt_dstr_cat_dstr(rt_dstr_t *dst, rt_dstr_t *src);`
+
+| 参数 | 描述 |
+| ---- | ---- |
+| dst  | 动态字符串对象 |
+| src  | 源字符串 |
+| 返回 | 描述 |
+| dst | 动态字符串拼接 dst 成功，但不会更改 src，交由用户处理 |
+| NULL | 动态字符串拼接 dst 失败，但不会更改 dst & src，交由用户处理 |
+
+
+### 3.8 动态字符串后拼接（拼接 n 个字符）
+`rt_dstr_t *rt_dstr_ncat_dstr(rt_dstr_t *dst, rt_dstr_t *src, size_t n);`
+
+| 参数 | 描述 |
+| ---- | ---- |
+| dst  | 动态字符串对象 |
+| src  | 源字符串 |
+| n  | 需要拼接几个字符 |
+| 返回 | 描述 |
+| dst | 动态字符串拼接 dst 成功，但不会更改 src，交由用户处理 |
+| NULL | 动态字符串拼接 dst 失败，但不会更改 dst & src，交由用户处理 |
+
+### 3.9 动态字符串前拼接
+`rt_dstr_t *rt_dstr_precat_dstr(rt_dstr_t *dst, rt_dstr_t *src);`
+
+| 参数 | 描述 |
+| ---- | ---- |
+| dst  | 动态字符串对象 |
+| src  | 源字符串 |
+| 返回 | 描述 |
+| dst | 动态字符串拼接 dst 成功，但不会更改 src，交由用户处理 |
+| NULL | 动态字符串拼接 dst 失败，但不会更改 dst & src，交由用户处理 |
+
+
+### 3.10 动态字符串前拼接（拼接几个字符）
+`rt_dstr_t *rt_dstr_prencat_dstr(rt_dstr_t *dst, rt_dstr_t *src, size_t n);`
+
+| 参数 | 描述 |
+| ---- | ---- |
+| dst  | 动态字符串对象 |
+| src  | 源字符串 |
+| n  | 需要拼接几个字符 |
+| 返回 | 描述 |
+| thiz | 字符串拼接 dstr 成功 |
+| NULL | 字符串拼接 dstr 失败，但不会更改 thiz，交由用户处理 |
+
+
+### 3.11 动态字符串比较
 `int rt_dstr_cmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2);`
 
 | 参数 | 描述 |
 | ---- | ---- |
 | dstr1  | 动态字符串1 |
 | dstr2  | 动态字符串2 |
-| return  | dstr1 < dstr2，返回负数 |
-| return  | dstr1 = dstr2，返回0 |
-| return  | dstr1 > dstr2，返回正数 |
+| 返回 | 描述 |
+| 负数 | dstr1 < dstr2 |
+| 返回0 | dstr1 = dstr2 |
+| 正数 | dstr1 > dstr2 |
 
 
-
-### 3.6 动态字符串比较（比较几个字符）
+### 3.12 动态字符串比较（比较 n 个字符）
 `int rt_dstr_ncmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2, size_t n);`
 
 | 参数 | 描述 |
@@ -100,31 +188,36 @@ RT-Thread online packages --->
 | dstr1  | 动态字符串1 |
 | dstr2  | 动态字符串2 |
 | n  | 需要比较几个字符 |
-| return  | dstr1 < dstr2，返回负数 |
-| return  | dstr1 = dstr2，返回0 |
-| return  | dstr1 > dstr2，返回正数 |
+| 返回 | 描述 |
+| 负数 | dstr1 < dstr2 |
+| 返回0 | dstr1 = dstr2 |
+| 正数 | dstr1 > dstr2 |
 
-### 3.7 动态字符串比较（忽略大小写）
+### 3.13 动态字符串比较（忽略大小写）
 `int rt_dstr_casecmp(rt_dstr_t *const dstr1, rt_dstr_t *const dstr2);`
 
 | 参数 | 描述 |
 | ---- | ---- |
 | dstr1  | 动态字符串1 |
 | dstr2  | 动态字符串2 |
-| return  | dstr1 < dstr2，返回负数 |
-| return  | dstr1 = dstr2，返回0 |
-| return  | dstr1 > dstr2，返回正数 |
+| 返回 | 描述 |
+| 负数 | dstr1 < dstr2 |
+| 返回0 | dstr1 = dstr2 |
+| 正数 | dstr1 > dstr2 |
 
-### 3.8 测量动态字符串长度
+### 3.14 测量动态字符串长度
 `int rt_dstr_strlen(rt_dstr_t *const thiz);`
 
 | 参数 | 描述 |
 | ---- | ---- |
 | thiz  | 动态字符串对象 |
-| return  | 参数非 NULL，将返回动态字符串长度；参数为 NULL 则返回-1 |
+| 返回 | 描述 |
+| 正数 | 返回动态字符串长度 |
+| 返回0 | 返回动态字符串长度 |
+| -1 | 输入参数为 NULL 是非法的 |
 
 
-### 3.9 字符串格式化输出
+### 3.15 字符串格式化输出
 `rt_dstr_t *rt_dstr_sprintf(rt_dstr_t *thiz, const char *fmt, ...);`
 
 | 参数 | 描述 |
@@ -132,9 +225,11 @@ RT-Thread online packages --->
 | thiz  | 动态字符串对象 |
 | fmt  | 格式化字符串 |
 | argument...  | 可选参数，任何类型的数据 |
-| return  | 返回 dstr 对象指针 |
+| 返回 | 描述 |
+| thiz | 字符串格式化成功 |
+| NULL | 字符串格式化失败，但不会更改 thiz，交由用户处理 |
 
-### 3.10 字符串格式化输出（以追加的方式实现）
+### 3.16 字符串格式化输出（以追加的方式）
 
 `rt_dstr_t *rt_dstr_append_printf(rt_dstr_t *thiz, const char *format, ...);`
 
@@ -143,7 +238,9 @@ RT-Thread online packages --->
 | thiz | 动态字符串对象 |
 |fmt|格式化字符串|
 | argument...  | 可选参数，任何类型的数据 |
-| return  | 返回 dstr 对象指针 |
+| 返回 | 描述 |
+| thiz | 字符串格式化成功 |
+| NULL | 字符串格式化失败，但不会更改 thiz，交由用户处理 |
 
 
 ## 4、注意事项
