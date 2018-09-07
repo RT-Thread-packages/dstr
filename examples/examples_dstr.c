@@ -21,6 +21,7 @@
  * Date           Author       Notes
  * 2018-06-07     never        the first version
  * 2018-07-25     never        add sample API
+ * 2018-08-30     never        add sample API
  */
 
 #include <rtthread.h>
@@ -32,63 +33,92 @@ void rt_dstr_print(rt_dstr_t *thiz)
 {
     if (thiz == NULL)
         return;
-    rt_kprintf("%s\n", thiz->str);
+    printf("%s\n", thiz->str);
 }
 
 void dstr_test_new(void)
 {
-    rt_kprintf("\n");
-
+    const char *str = "new dstr";
     rt_dstr_t *p = NULL;
 
-    p = rt_dstr_new("new dstr");
+    printf("\n");
+
+    printf("sample of new:\n");
+    p = rt_dstr_new(str);
     rt_dstr_print(p);
     rt_dstr_del(p);
-    rt_kprintf("\n");
+    printf("\n");
 }
 
 void dstr_test_cat(void)
 {
-    rt_dstr_t *p1 = NULL, *p2 = NULL;
+    rt_dstr_t *p = NULL;
     const char *str = "cat ";
 
-    p1 = rt_dstr_cat(p1, "cat sample1");
+    printf("sample of cat:\n");
+    p = rt_dstr_new(str);
+    rt_dstr_cat(p, "sample");
+    rt_dstr_print(p);
+    rt_dstr_del(p);
 
-    rt_dstr_print(p1);
-
-    rt_dstr_del(p1);
-
-    p2 = rt_dstr_new(str);
-
-    rt_dstr_cat(p2, "sample2");
-
-    rt_dstr_print(p1);
-
-    rt_dstr_del(p1);
-
-    rt_kprintf("\n");
+    printf("\n");
 }
 
 void dstr_test_ncat(void)
 {
-    rt_dstr_t *p1 = NULL, *p2 = NULL;
+    rt_dstr_t *p = NULL;
     const char *str = "ncat ";
 
-    p1 = rt_dstr_ncat(p1, "ncat sample1", 12);
+    printf("sample of ncat:\n");
+    p = rt_dstr_new(str);
+    rt_dstr_ncat(p, "samplexxxxxx", 6);
+    rt_dstr_print(p);
+    rt_dstr_del(p);
 
+    printf("\n");
+}
+
+void dstr_test_precat(void)
+{
+    rt_dstr_t *p = NULL;
+
+    printf("sample of precat:\n");
+    p = rt_dstr_precat(NULL, "456");
+    rt_dstr_precat(p, "123");
+    rt_dstr_precat(p, "pre sample: ");
+
+    rt_dstr_print(p);
+    rt_dstr_del(p);
+}
+
+void dstr_test_cat_dstr(void)
+{
+    rt_dstr_t *p1 = NULL, *p2 = NULL;
+
+    printf("\n");
+    printf("sample of cat_dstr:\n");
+    p1 = rt_dstr_new("dstr1");
+    p2 = rt_dstr_new("dstr2");
+    p1 = rt_dstr_cat_dstr(p1, p2);
     rt_dstr_print(p1);
-
+    rt_dstr_print(p2);
     rt_dstr_del(p1);
+    rt_dstr_del(p2);
+}
 
-    p2 = rt_dstr_new(str);
+void dstr_test_precat_dstr(void)
+{
+    rt_dstr_t *p1 = NULL, *p2 = NULL;
 
-    rt_dstr_ncat(p2, "sample2222", 7);
-
+    printf("\n");
+    printf("sample of precat_dstr:\n");
+    p1 = rt_dstr_new("dstr1");
+    p2 = rt_dstr_new("dstr2");
+    p1 = rt_dstr_precat_dstr(p1, p2);
     rt_dstr_print(p1);
-
+    rt_dstr_print(p2);
     rt_dstr_del(p1);
-
-    rt_kprintf("\n");
+    rt_dstr_del(p2);
 }
 
 void dstr_test_cmp(void)
@@ -97,28 +127,30 @@ void dstr_test_cmp(void)
     rt_dstr_t *p2 = NULL;
     int res = 0;
 
+    printf("\n");
+    printf("sample of cmp:\n");
     p1 = rt_dstr_new("helle");
     p2 = rt_dstr_new("hellc");
 
     res = rt_dstr_cmp(p1, p2);
-    rt_kprintf("cmp result: %d\n", res);
+    printf("cmp result: %d\n", res);
 
     rt_dstr_del(p1);
     rt_dstr_del(p2);
 
-    //  NULL
+    /* one of them is NULL */
     p1 = rt_dstr_new("abc");
     res = rt_dstr_cmp(p1, NULL);
-    rt_kprintf("s2:NULL result: %d\n", res);
+    printf("s2:NULL result: %d\n", res);
     rt_dstr_del(p1);
 
     p1 = rt_dstr_new("efg");
     res = rt_dstr_cmp(NULL, p1);
-    rt_kprintf("s1:NULL result: %d\n", res);
+    printf("s1:NULL result: %d\n", res);
     rt_dstr_del(p1);
 
     res = rt_dstr_cmp(NULL, NULL);
-    rt_kprintf("two NULL result: %d\n\n", res);
+    printf("two NULL result: %d\n\n", res);
 }
 
 void dstr_test_ncmp(void)
@@ -127,28 +159,29 @@ void dstr_test_ncmp(void)
     rt_dstr_t *p2 = NULL;
     int res = 0;
 
+    printf("sample of ncmp:\n");
     p1 = rt_dstr_new("hello");
     p2 = rt_dstr_new("hella");
 
     res = rt_dstr_ncmp(p1, p2, 5);
-    rt_kprintf("ncmp result: %d\n", res);
+    printf("ncmp result: %d\n", res);
 
     rt_dstr_del(p1);
     rt_dstr_del(p2);
 
-    /* NULL */
+    /* one of them is NULL */
     p1 = rt_dstr_new("abc");
     res = rt_dstr_ncmp(p1, NULL, 2);
-    rt_kprintf("s2:NULL ncmp result: %d\n", res);
+    printf("s2:NULL ncmp result: %d\n", res);
     rt_dstr_del(p1);
 
     p1 = rt_dstr_new("efg");
     res = rt_dstr_ncmp(NULL, p1, 3);
-    rt_kprintf("s1:NULL ncmp result: %d\n", res);
+    printf("s1:NULL ncmp result: %d\n", res);
     rt_dstr_del(p1);
 
     res = rt_dstr_ncmp(NULL, NULL, 4);
-    rt_kprintf("two NULL ncmp result: %d\n\n", res);
+    printf("two NULL ncmp result: %d\n\n", res);
 }
 
 void dstr_test_casecmp(void)
@@ -157,28 +190,29 @@ void dstr_test_casecmp(void)
     rt_dstr_t *p2 = NULL;
     int res = 0;
 
+    printf("sample of casecmp:\n");
     p1 = rt_dstr_new("hello");
     p2 = rt_dstr_new("HELLO");
 
     res = rt_dstr_casecmp(p1, p2);
-    rt_kprintf("casecmp result: %d\n", res);
+    printf("casecmp result: %d\n", res);
 
     rt_dstr_del(p1);
     rt_dstr_del(p2);
 
-    /* NULL */
+    /* one of them is NULL */
     p1 = rt_dstr_new("abc");
     res = rt_dstr_casecmp(p1, NULL);
-    rt_kprintf("s2:NULL casecmp result: %d\n", res);
+    printf("s2:NULL casecmp result: %d\n", res);
     rt_dstr_del(p1);
 
     p1 = rt_dstr_new("efg");
     res = rt_dstr_casecmp(NULL, p1);
-    rt_kprintf("s1:NULL casecmp result: %d\n", res);
+    printf("s1:NULL casecmp result: %d\n", res);
     rt_dstr_del(p1);
 
     res = rt_dstr_casecmp(NULL, NULL);
-    rt_kprintf("two NULL casecmp result: %d\n\n", res);
+    printf("two NULL casecmp result: %d\n\n", res);
 }
 
 void dstr_test_strlen(void)
@@ -186,6 +220,7 @@ void dstr_test_strlen(void)
     rt_dstr_t *p1 = NULL;
     int res = 0;
 
+    printf("sample of strlen:\n");
     p1 = rt_dstr_new("hello strlen");
 
     res = rt_dstr_strlen(p1);
@@ -193,11 +228,11 @@ void dstr_test_strlen(void)
     if (res == -1)
         return;
 
-    rt_kprintf("length: %d\n", res);
+    printf("length: %d\n", res);
 
     rt_dstr_del(p1);
 
-    rt_kprintf("\n");
+    printf("\n");
 }
 
 void dstr_test_sprintf(void)
@@ -206,7 +241,7 @@ void dstr_test_sprintf(void)
     rt_dstr_t *p1 = NULL;
     rt_dstr_t *p2 = NULL;
 
-    /* string format */
+    printf("sample of sprintf:\n");
     p1 = rt_dstr_new("test");
 
     rt_dstr_sprintf(p1, "%s", src);
@@ -215,7 +250,6 @@ void dstr_test_sprintf(void)
 
     rt_dstr_del(p1);
 
-    /* hex format */
     p2 = rt_dstr_new("");
 
     rt_dstr_sprintf(p2, "%08x", 0x20180604);
@@ -224,10 +258,10 @@ void dstr_test_sprintf(void)
 
     rt_dstr_del(p2);
 
-    rt_kprintf("\n");
+    printf("\n");
 }
 
-rt_dstr_t *path_cat(const char *path, const char *filename)
+static rt_dstr_t *path_cat(const char *path, const char *filename)
 {
     rt_dstr_t *p = RT_NULL;
 
@@ -236,7 +270,7 @@ rt_dstr_t *path_cat(const char *path, const char *filename)
     return p;
 }
 
-rt_dstr_t *header_info_cat(char *send_buffer)
+static rt_dstr_t *header_info_cat(char *send_buffer)
 {
     rt_dstr_t *p = RT_NULL;
     const char *key = "header-key";
@@ -252,16 +286,18 @@ rt_dstr_t *header_info_cat(char *send_buffer)
 void dstr_test_append(void)
 {
     char *buffer = "test of header";
+    rt_dstr_t *p = NULL;
 
-    rt_dstr_print(path_cat("/home", "bsp/thread.c"));
-    rt_dstr_del(path_cat("/home", "bsp/thread.c"));
+    printf("sample of append:\n");
+    p = path_cat("/home", "bsp/thread.c");
+    rt_dstr_print(p);
+    rt_dstr_del(p);
 
-    rt_kprintf("\n");
+    printf("\n");
 
-    rt_dstr_print(header_info_cat(buffer));
-    rt_dstr_del(header_info_cat(buffer));
-
-    rt_kprintf("\n");
+    p = header_info_cat(buffer);
+    rt_dstr_print(p);
+    rt_dstr_del(p);
 }
 
 void dstr_test(void)
@@ -269,6 +305,9 @@ void dstr_test(void)
     dstr_test_new();
     dstr_test_cat();
     dstr_test_ncat();
+    dstr_test_precat();
+    dstr_test_cat_dstr();
+    dstr_test_precat_dstr();
     dstr_test_cmp();
     dstr_test_ncmp();
     dstr_test_casecmp();
